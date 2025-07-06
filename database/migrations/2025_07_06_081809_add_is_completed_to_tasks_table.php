@@ -8,15 +8,25 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->boolean('is_completed')->default(false);
-        });
+        // Pastikan tabel tasks ada terlebih dahulu
+        if (Schema::hasTable('tasks')) {
+            Schema::table('tasks', function (Blueprint $table) {
+                // Cek dulu apakah kolom sudah ada
+                if (!Schema::hasColumn('tasks', 'is_completed')) {
+                    $table->boolean('is_completed')->default(false);
+                }
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('tasks', function (Blueprint $table) {
-            $table->dropColumn('is_completed');
-        });
+        if (Schema::hasTable('tasks')) {
+            Schema::table('tasks', function (Blueprint $table) {
+                if (Schema::hasColumn('tasks', 'is_completed')) {
+                    $table->dropColumn('is_completed');
+                }
+            });
+        }
     }
 };

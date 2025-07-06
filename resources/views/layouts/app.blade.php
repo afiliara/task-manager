@@ -57,15 +57,24 @@
                     <a href="{{ route('dashboard') }}" class="text-xl font-bold">TASK MANAGER</a>
                 </div>
                 <div class="flex items-center">
-                    <span class="mr-4">{{ Auth::user()->name }}</span>
-                    <a href="{{ route('logout') }}"
-                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                       class="bg-white text-pink-600 hover:bg-rose-100 px-4 py-2 rounded-full text-sm font-bold">
-                       Logout
-                    </a>
-                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
-                        @csrf
-                    </form>
+                    @auth
+                        <span class="mr-4">{{ Auth::user()->name }}</span>
+                        <a href="{{ route('logout') }}"
+                           onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                           class="bg-white text-pink-600 hover:bg-rose-100 px-4 py-2 rounded-full text-sm font-bold">
+                           Logout
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                            @csrf
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="bg-white text-pink-600 hover:bg-rose-100 px-4 py-2 rounded-full text-sm font-bold mr-2">
+                            Login
+                        </a>
+                        <a href="{{ route('register') }}" class="bg-pink-700 text-white hover:bg-pink-800 px-4 py-2 rounded-full text-sm font-bold">
+                            Register
+                        </a>
+                    @endauth
                 </div>
             </div>
         </div>

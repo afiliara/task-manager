@@ -13,8 +13,15 @@ class Task extends Model
         'title',
         'description',
         'due_date',
-        'status',
+        'priority',
         'is_completed',
-        'user_id',
+        'user_id'
     ];
+
+    protected $dates = ['due_date'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
