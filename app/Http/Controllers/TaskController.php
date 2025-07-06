@@ -8,124 +8,107 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-public function dashboard()
-{
-    // Pastikan user sudah login
-    if (!auth()->check()) {
-        return redirect()->route('login');
-    }
-
-    $user = auth()->user();
-    $tasks = Task::where('user_id', $user->id)
-                ->orderBy('is_completed')
-                ->orderBy('due_date', 'asc')
-                ->get();
-
-    return view('dashboard', [
-        'tasks' => $tasks,
-        'user' => $user
-    ]);
-    }
-
     public function index()
+    {
+        $tasks = Task::where('user_id', Auth::id())->get();
+        return view('tasks.index', compact('tasks'));
+    }
+
+    public function dashboard()
     {
         $tasks = Task::where('user_id', Auth::id())
                     ->orderBy('is_completed')
                     ->orderBy('due_date', 'asc')
                     ->get();
 
-        return view('tasks.index', compact('tasks'));
+        $stats = [
+            'total' => $tasks->count(),
+            'completed' => $tasks->where('status', 'completed')->count(),
+            'in_progress' => $tasks->where('status', 'in_progress')->count(),
+            'pending' => $tasks->where('status', 'pending')->count()
+        ];
+
+        return view('dashboard', [
+            'tasks' => $tasks,
+            'stats' => $stats,
+            'recentTasks' => $tasks->take(3)
+        ]);
     }
 
     public function create()
     {
-        return view('tasks.create', [
-            'priorities' => ['low', 'medium', 'high']
-        ]);
+        return view('tasks.create');
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'nullable|date|after_or_equal:today',
-            'priority' => 'required|in:low,medium,high'
+            'title' => 'required',
+            'description' => 'nullable',
+            'due_date' => 'nullable|date'
+            // Hapus validasi status
         ]);
 
         Task::create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'due_date' => $validated['due_date'],
-            'priority' => $validated['priority'],
-            'is_completed' => false,
-            'user_id' => Auth::id()
+            'is_completed' => $request->has('is_completed'), // Gunakan ini
+            'user_id' => Auth::id(),
         ]);
 
-        return redirect()->route('tasks.index')
-                        ->with('success', 'Task created successfully.');
+        return redirect()->route('tasks.index');
     }
 
     public function show(Task $task)
     {
-        $this->authorize('view', $task);
         return view('tasks.show', compact('task'));
     }
 
     public function edit(Task $task)
     {
-        $this->authorize('update', $task);
-
-        return view('tasks.edit', [
-            'task' => $task,
-            'priorities' => ['low', 'medium', 'high'],
-            'statuses' => ['pending', 'in_progress', 'completed']
-        ]);
+        return view('tasks.edit', compact('task'));
     }
 
-    public function update(Request $request, Task $task)
+public function update(Request $request, Task $task)
+{
+    $request->validate([
+        'title' => 'required',
+        'description' => 'nullable',
+        'due_date' => 'nullable|date',
+        'status' => 'required|in:pending,in_progress,completed'
+    ]);
+
+    $task->update([
+        'title' => $request->title,
+        'description' => $request->description,
+        'due_date' => $request->due_date,
+        'is_completed' => $request->has('is_completed'),
+        'status' => $request->status
+    ]);
+
+    return redirect()->route('tasks.index')->with('success', 'Task updated.');
+}
+
+public function destroy(Task $task)
+{
+    $task->delete();
+    return redirect()->route('tasks.index')->with('success', 'Task deleted.');
+}
+
+    public function toggleComplete(Request $request, $id)
     {
-        $this->authorize('update', $task);
+        $task = Task::findOrFail($id);
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'nullable|date',
-            'priority' => 'required|in:low,medium,high',
-            'status' => 'required|in:pending,in_progress,completed',
-            'is_completed' => 'boolean'
-        ]);
+        // Pastikan task milik user yang sedang login
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
 
-        $task->update([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'due_date' => $validated['due_date'],
-            'priority' => $validated['priority'],
-            'status' => $validated['status'],
-            'is_completed' => $validated['is_completed'] ?? false
-        ]);
-
-        return redirect()->route('tasks.index')
-                        ->with('success', 'Task updated successfully.');
-    }
-
-    public function destroy(Task $task)
-    {
-        $this->authorize('delete', $task);
-
-        $task->delete();
-
-        return redirect()->route('tasks.index')
-                        ->with('success', 'Task deleted successfully.');
-    }
-
-    public function toggleComplete(Task $task)
-    {
-        $this->authorize('update', $task);
-
+        // Toggle status is_completed dan update status
         $task->update([
             'is_completed' => !$task->is_completed,
-            'status' => $task->is_completed ? 'in_progress' : 'completed'
+            'status' => !$task->is_completed ? 'completed' : 'pending'
         ]);
 
         return back()->with('success', 'Task status updated.');

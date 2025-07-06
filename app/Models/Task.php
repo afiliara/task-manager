@@ -14,8 +14,14 @@ class Task extends Model
         'description',
         'due_date',
         'priority',
+        'status',
         'is_completed',
         'user_id'
+    ];
+
+    protected $casts = [
+        'due_date' => 'datetime',
+        'is_completed' => 'boolean'
     ];
 
     protected $dates = ['due_date'];
