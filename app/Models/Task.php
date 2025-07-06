@@ -1,3 +1,5 @@
+<?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +13,7 @@ class Task extends Model
         'title',
         'description',
         'due_date',
+        'status',
         'is_completed',
         'user_id',
     ];

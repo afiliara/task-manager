@@ -1,3 +1,5 @@
+<?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Task;
@@ -6,6 +8,12 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
+    public function dashboard()
+    {
+        $tasks = Task::where('user_id', Auth::id())->get();
+        return view('dashboard', compact('tasks'));
+    }
+
     public function index()
     {
         $tasks = Task::where('user_id', Auth::id())->get();
@@ -23,12 +31,14 @@ class TaskController extends Controller
             'title' => 'required',
             'description' => 'nullable',
             'due_date' => 'nullable|date',
+            'status' => 'nullable|string'
         ]);
 
         Task::create([
             'title' => $request->title,
             'description' => $request->description,
             'due_date' => $request->due_date,
+            'status' => $request->status ?? 'pending',
             'is_completed' => $request->has('is_completed'),
             'user_id' => Auth::id(),
         ]);
@@ -52,12 +62,14 @@ class TaskController extends Controller
             'title' => 'required',
             'description' => 'nullable',
             'due_date' => 'nullable|date',
+            'status' => 'nullable|string'
         ]);
 
         $task->update([
             'title' => $request->title,
             'description' => $request->description,
             'due_date' => $request->due_date,
+            'status' => $request->status ?? 'pending',
             'is_completed' => $request->has('is_completed'),
         ]);
 
